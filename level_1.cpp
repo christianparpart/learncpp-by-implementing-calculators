@@ -1,7 +1,12 @@
 #include <iostream>
 #include <cstdlib>
 
-// XXX Very basic addition-calculator.
+// Task: Very basic addition-calculator.
+//
+// Create a calculator that
+// - asks for first number
+// - asks for second number
+// - prints out result
 
 int main()
 {

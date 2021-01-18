@@ -1,18 +1,25 @@
 set(
 	SRC_FILES
-	./main.cpp
-	./lexer.hpp
-	./interpreter.hpp
-)
-set(
-	EXEC_NAME
-	level_5
+	main.cpp
+	lexer.hpp
+	interpreter.hpp
 )
 add_executable(
-	${EXEC_NAME}
+	level_5
 	${SRC_FILES}
 )
 add_compile_options(
-	${EXEC_NAME}
-	PRIVATE "-Wall" "-g"
+	level_5
+)
+set(
+	TEST_SRC_FILES
+	parser_test.cpp
+)
+add_executable(
+	level_5_tests
+	${TEST_SRC_FILES}
+)
+target_link_libraries(
+	level_5_tests
+	gtest_main
 )

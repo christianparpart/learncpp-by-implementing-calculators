@@ -1,81 +1,70 @@
 #pragma once
-#include <iostream>
-#include <stdexcept>
-#include "lexer.hpp"
+#include "parser.hpp"
+#include <memory>
+#include <stack>
+#include <variant>
 
-class Interpreter{
-	private:
-		Lexer lexer_;
-		Token current_token_;
-		void error_(){
-			throw std::logic_error("Invalid syntex");
-		}
-	public:
-		/// Interpreter constructor for the calculator
-		///
-		/// \param lexer Lexer for getting the tokens, one at a time
-		Interpreter(const Lexer& lexer) : lexer_(lexer), current_token_(lexer_.getNextToken())
-		{}
-		/// Eat the current token
-		///
-		/// Compare the *current_token_* with the one that is passed, if they both match,
-		/// The symtex is currect, If not, it is a syntex error and we throw an exception
-		/// \param token_type Type to check against
-		void eat(Type token_type){
-			if(this->current_token_.getToken() == token_type)
-			{ this->current_token_ = this->lexer_.getNextToken(); }
-			else
-			{ this->error_(); }
-		}
-		/// factor: INTEGER | LPARAN expr RPARAN
-		///
-		/// This is the helper method useful for parsing the *factor* which is either an INT or a *expr*
-		/// in the grammer
-		int factor(){
-			Token token = this->current_token_;
-			if(token.getToken() == Type::INTEGER){
-				this->eat(Type::INTEGER);
-				return std::get<int>(token.getValue());
-			}else if(token.getToken() == Type::LPARAN){
-				this->eat(Type::LPARAN);
-				int result = this->expr();
-				this->eat(Type::RPARAN);
-				return result;
-			}
-		}
-		/// term: factor( (MUL|DIV)factor )*
-		///
-		/// This is the helper method useful for parsing the *term* in the interpreter grammer
-		int term(){
-			int result = this->factor();
-			while(this->current_token_.getToken() == Type::MUL || this->current_token_.getToken() == Type::DIV){
-				Token operation = this->current_token_;
-				if(operation.getToken() == Type::MUL){
-					this->eat(Type::MUL);
-					result *= this->factor();
-				}else if(operation.getToken() == Type::DIV){
-					this->eat(Type::DIV);
-					result /= this->factor();
-				}
-			}
-			return result;
-		}
-		/// expr: Arithematic experssion parser / interpreter
-		///
-		/// \note expr	:	term( (PLUS|MINUS)term )
-		///	      term	:	factor( (MUL|DIV)factor )*
-		///       factor:	INTEGER | LPARAN expr RPARAN
-		int expr(){
-			int result = this->term();
-			while(this->current_token_.getToken() == Type::PLUS || this->current_token_.getToken() == Type::MINUS){
-				if(this->current_token_.getToken() == Type::PLUS){
-					this->eat(Type::PLUS);
-					result += this->term();
-				}else if(this->current_token_.getToken() == Type::MINUS){
-					this->eat(Type::MINUS);
-					result -= this->term();
-				}
-			}
-			return result;
-		}
+class Interpreter {
+      public:
+        /// Interpreter takes the Parser object which parses the expression
+        /// and generates the AST
+        explicit Interpreter(const Parser& parser) : parser_{parser} {}
+        explicit Interpreter(Parser&& parser) : parser_{std::move(parser)} {}
+        /// public API which returns the final result of the expression
+        ///
+        /// \return Calculated result of the user input expression
+        int interpret() {
+                ASTVisitor(parser_.parse().get());
+                const int result= interpreter_stack_.top();
+                interpreter_stack_.pop();
+                return result;
+        }
+
+      private:
+        Parser parser_;
+        std::stack<int> interpreter_stack_;
+        /// Let's parse the AST using Post-Order Traversal method
+        /// which in-turn uses the Interpreter Stack for the computation
+        void ASTVisitor(ASTNode* ast_root) {
+                if(ast_root != nullptr) {
+                        ASTVisitor(ast_root->get_left());
+                        ASTVisitor(ast_root->get_right());
+                        visit_node(ast_root);
+                }
+        }
+        /// Check if the current node is a Num or BinOp, If num, Push it to the
+        /// stack, If not, pop two elements from the stack and perform the
+        /// operation(reverse polish) On the Post-Order traversal
+        ///
+        /// \param ast_node Current node seen by the ASTVisitor
+        void visit_node(ASTNode* ast_node) {
+                if(!ast_node->is_numeric()) {
+                        int value_one= interpreter_stack_.top();
+                        interpreter_stack_.pop();
+                        int value_two= interpreter_stack_.top();
+                        interpreter_stack_.pop();
+                        Type interpret_operator=
+                            ast_node->get_token().get_token_type();
+                        switch(interpret_operator) {
+                        case Type::Plus:
+                                interpreter_stack_.push(value_one + value_two);
+                                break;
+                        case Type::Minus:
+                                interpreter_stack_.push(value_one - value_two);
+                                break;
+                        case Type::Mul:
+                                interpreter_stack_.push(value_one * value_two);
+                                break;
+                        case Type::Div:
+                                interpreter_stack_.push(value_one / value_two);
+                                break;
+                        default:
+                                error();
+                        }
+                } else {
+                        interpreter_stack_.push(
+                            ast_node->get_token().get_integer_literal());
+                }
+        }
+        void error() { throw std::logic_error("Interpreter error"); }
 };

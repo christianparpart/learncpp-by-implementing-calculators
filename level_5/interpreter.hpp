@@ -39,9 +39,9 @@ class Interpreter {
         /// \param ast_node Current node seen by the ASTVisitor
         void visit_node(ASTNode* ast_node) {
                 if(!ast_node->is_numeric()) {
-                        int value_one= interpreter_stack_.top();
-                        interpreter_stack_.pop();
                         int value_two= interpreter_stack_.top();
+                        interpreter_stack_.pop();
+                        int value_one= interpreter_stack_.top();
                         interpreter_stack_.pop();
                         Type interpret_operator=
                             ast_node->get_token().get_token_type();

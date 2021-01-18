@@ -38,7 +38,8 @@ class Interpreter {
         ///
         /// \param ast_node Current node seen by the ASTVisitor
         void visit_node(ASTNode* ast_node) {
-                if(!ast_node->is_numeric()) {
+                switch(ast_node->get_node_type()) {
+                case NodeType::BinOp: {
                         int value_two= interpreter_stack_.top();
                         interpreter_stack_.pop();
                         int value_one= interpreter_stack_.top();
@@ -60,10 +61,24 @@ class Interpreter {
                                 break;
                         default:
                                 error();
+                                break;
                         }
-                } else {
+                        break;
+                }
+                case NodeType::Num: {
                         interpreter_stack_.push(
                             ast_node->get_token().get_integer_literal());
+                        break;
+                }
+                case NodeType::UnaryOp: {
+                        int value= interpreter_stack_.top();
+                        interpreter_stack_.pop();
+                        if(ast_node->get_token().get_token_type() == Type::Plus)
+                                interpreter_stack_.push(value);
+                        else
+                                interpreter_stack_.push(-1 * value);
+                        break;
+                }
                 }
         }
         void error() { throw std::logic_error("Interpreter error"); }

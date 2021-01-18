@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <variant>
 
+enum class NodeType { Num= 0, BinOp, UnaryOp };
 class BinOp;
 class Num;
 
@@ -12,7 +13,7 @@ class Num;
 class ASTNode {
       public:
         constexpr virtual const Token& get_token() const noexcept= 0;
-        constexpr virtual const bool is_numeric() const noexcept= 0;
+        constexpr virtual const NodeType get_node_type() const noexcept= 0;
         constexpr virtual ASTNode* get_left() noexcept= 0;
         constexpr virtual ASTNode* get_right() noexcept= 0;
         virtual ~ASTNode()= default;
@@ -24,8 +25,8 @@ class Num final : public ASTNode {
       public:
         Num(const Token& token) : token_{token} {}
         const Token& get_token() const noexcept override { return token_; }
-        const bool is_numeric() const noexcept override {
-                return numeric_literal_;
+        const NodeType get_node_type() const noexcept override {
+                return NodeType::Num;
         }
         ASTNode* get_left() noexcept override { return left_node_.get(); }
         ASTNode* get_right() noexcept override { return right_node_.get(); }
@@ -35,7 +36,6 @@ class Num final : public ASTNode {
 
       private:
         Token token_;
-        bool numeric_literal_{true};
         std::unique_ptr<ASTNode> left_node_{nullptr};
         std::unique_ptr<ASTNode> right_node_{nullptr};
 };
@@ -49,8 +49,8 @@ class BinOp final : public ASTNode {
             : left_node_{std::move(left)},
               right_node_{std::move(right)}, token_{token} {}
         const Token& get_token() const noexcept override { return token_; }
-        const bool is_numeric() const noexcept override {
-                return numeric_literal_;
+        const NodeType get_node_type() const noexcept override {
+                return NodeType::BinOp;
         }
         ASTNode* get_left() noexcept override { return left_node_.get(); }
         ASTNode* get_right() noexcept override { return right_node_.get(); }
@@ -62,10 +62,33 @@ class BinOp final : public ASTNode {
         }
 
       private:
-        std::unique_ptr<ASTNode> left_node_;
-        std::unique_ptr<ASTNode> right_node_;
         Token token_;
-        bool numeric_literal_{false};
+        std::unique_ptr<ASTNode> left_node_{nullptr};
+        std::unique_ptr<ASTNode> right_node_{nullptr};
+};
+
+/// <Operator> Operand Unary operator class
+/// with one operand
+class UnaryOp final : public ASTNode {
+      public:
+        UnaryOp(std::unique_ptr<ASTNode> left, const Token& token)
+            : token_{token}, left_node_{std::move(left)} {}
+        const Token& get_token() const noexcept override { return token_; }
+        const NodeType get_node_type() const noexcept override {
+                return NodeType::UnaryOp;
+        }
+        ASTNode* get_left() noexcept override { return left_node_.get(); }
+        ASTNode* get_right() noexcept override { return right_node_.get(); }
+        static std::unique_ptr<ASTNode> make(std::unique_ptr<ASTNode> left,
+                                             std::unique_ptr<ASTNode>,
+                                             const Token& token) {
+                return std::make_unique<UnaryOp>(std::move(left), token);
+        }
+
+      private:
+        Token token_;
+        std::unique_ptr<ASTNode> left_node_{nullptr};
+        std::unique_ptr<ASTNode> right_node_{nullptr};
 };
 
 class Parser {
@@ -110,6 +133,14 @@ class Parser {
                         std::unique_ptr<ASTNode> result= expr();
                         eat(Type::Rparan);
                         return result;
+                } else if(token.get_token_type() == Type::Minus) {
+                        eat(Type::Minus);
+                        return UnaryOp::make(factor(), nullptr,
+                                             Token(Type::Minus));
+                } else if(token.get_token_type() == Type::Plus) {
+                        eat(Type::Plus);
+                        return UnaryOp::make(factor(), nullptr,
+                                             Token(Type::Plus));
                 } else {
                         error();
                 }

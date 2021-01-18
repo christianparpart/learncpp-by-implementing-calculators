@@ -1,4 +1,4 @@
 Grammer:
 	expr   : term( ( PLUS | MINUS ) term )*
 	term   : factor( ( MUL | DIV ) factor )*
-	factor : INTEGER | LPARAN expr RPARAN
+	factor : ( PLUS | MINUS ) factor | INTEGER | LPARAN expr RPARAN

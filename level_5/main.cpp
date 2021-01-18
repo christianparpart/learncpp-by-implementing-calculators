@@ -13,7 +13,7 @@ auto main(int argc, const char* const argv[]) -> int {
                         std::cout << std::endl;
                         std::cout << interpreter.interpret() << std::endl;
                 } catch(const std::logic_error& except) {
-                        std::cout << "Syntex error" << std::endl;
+                        std::cout << "Syntax error" << std::endl;
                         continue;
                 }
         }

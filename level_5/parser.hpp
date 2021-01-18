@@ -110,7 +110,7 @@ class Parser {
         /// Eat the current token
         ///
         /// Compare the *current_token_* with the one that is passed, if they
-        /// both match, The symtex is currect, If not, it is a syntex error and
+        /// both match, The syntax is currect, If not, it is a syntax error and
         /// we throw an exception \param token_type Type to check against
         constexpr void eat(Type token_type) {
                 if(current_token_.get_token_type() == token_type) {
@@ -119,7 +119,7 @@ class Parser {
                         error();
                 }
         }
-        /// factor: INTEGER | LPARAN expr RPARAN
+        /// factor: ( PLUS | MINUS ) factor | INTEGER | LPARAN expr RPARAN
         ///
         /// This is the helper method useful for parsing the *factor* which is
         /// either an INT or a *expr* in the grammer
@@ -145,7 +145,7 @@ class Parser {
                         error();
                 }
         }
-        /// term: factor( (MUL|DIV)factor )*
+        /// term: factor( ( MUL | DIV ) factor )*
         ///
         /// This is the helper method useful for parsing the *term* in the
         /// interpreter grammer, this builds the BinOp node for the AST.
@@ -168,9 +168,9 @@ class Parser {
         }
         /// expr: Arithematic experssion parser / interpreter
         ///
-        /// \note expr	 : term( ( PLUS | MINUS ) term )*
-        ///	      term	 : factor( ( MUL | DIV ) factor )*
-        ///       factor : INTEGER | LPARAN expr RPARAN
+        /// \note expr	 : term ( ( PLUS | MINUS ) term )*
+        ///	      term	 : factor ( ( MUL | DIV ) factor )*
+        ///       factor : ( PLUS | MINUS ) factor | INTEGER | LPARAN expr RPARAN
         std::unique_ptr<ASTNode> expr() {
                 std::unique_ptr<ASTNode> result= term();
                 while(current_token_.get_token_type() == Type::Plus ||

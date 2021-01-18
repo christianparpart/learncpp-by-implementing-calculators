@@ -1,0 +1,13 @@
+set(
+	SRC_FILES
+	main.cpp
+	lexer.hpp
+	interpreter.hpp
+)
+add_executable(
+	level_5
+	${SRC_FILES}
+)
+add_compile_options(
+	level_5
+)

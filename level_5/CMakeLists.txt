@@ -11,15 +11,3 @@ add_executable(
 add_compile_options(
 	level_5
 )
-set(
-	TEST_SRC_FILES
-	parser_test.cpp
-)
-add_executable(
-	level_5_tests
-	${TEST_SRC_FILES}
-)
-target_link_libraries(
-	level_5_tests
-	gtest_main
-)
